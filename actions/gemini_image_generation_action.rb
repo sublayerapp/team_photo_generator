@@ -20,7 +20,7 @@ require 'pry'
 #   # Save to file
 #   File.binwrite("llama_photo.png", result[:image_data])
 class GeminiImageGenerationAction < Sublayer::Actions::Base
-  DEFAULT_MODEL = "gemini-2.0-flash-exp-image-generation"
+  DEFAULT_MODEL = "gemini-2.5-flash-image-preview"
 
   def initialize(image_path:, prompt:, output_path: nil, model: DEFAULT_MODEL)
     @image_paths = image_path.is_a?(Array) ? image_path : [image_path]

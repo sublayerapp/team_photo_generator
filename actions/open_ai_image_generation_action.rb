@@ -22,19 +22,35 @@ class OpenAIImageGenerationAction < Sublayer::Actions::Base
   end
 
   def call
-    response = HTTParty.post(
-      "https://api.openai.com/v1/images/edits",
-      headers: {
-        "Authorization" => "Bearer #{ENV.fetch('OPENAI_API_KEY')}"
-      },
-      multipart: true,
-      body: build_request_body
-    )
+    retries = 0
+    max_retries = 3
+    
+    begin
+      response = HTTParty.post(
+        "https://api.openai.com/v1/images/edits",
+        headers: {
+          "Authorization" => "Bearer #{ENV.fetch('OPENAI_API_KEY')}"
+        },
+        multipart: true,
+        body: build_request_body,
+        timeout: 120
+      )
 
-    handle_response(response)
-  rescue HTTParty::Error, StandardError => e
-    log_error("API request failed: #{e.message}")
-    raise e
+      handle_response(response)
+    rescue Net::ReadTimeout, Net::OpenTimeout => e
+      retries += 1
+      if retries <= max_retries
+        log_info("Request timeout (attempt #{retries}/#{max_retries}), retrying...")
+        sleep(2 ** retries)
+        retry
+      else
+        log_error("Request failed after #{max_retries} retries: #{e.message}")
+        raise e
+      end
+    rescue HTTParty::Error, StandardError => e
+      log_error("API request failed: #{e.message}")
+      raise e
+    end
   end
 
   private
