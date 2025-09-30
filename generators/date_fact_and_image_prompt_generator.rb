@@ -8,8 +8,9 @@ class DateFactAndImagePromptGenerator < Sublayer::Generators::Base
       { name: "image_prompt", description: "An image prompt to transform a headshot based on the fact" }
     ]
 
-  def initialize(date:)
+  def initialize(date:, previous_facts: [])
     @date = date
+    @previous_facts = previous_facts
   end
 
   def generate
@@ -17,11 +18,19 @@ class DateFactAndImagePromptGenerator < Sublayer::Generators::Base
   end
 
   def prompt
+    previous_facts_section = if @previous_facts.any?
+      "\nDo NOT generate any of the following facts that were already generated:\n" +
+      @previous_facts.map { |f| "- #{f}" }.join("\n") +
+      "\n\nMake sure your new facts are completely different from the above.\n"
+    else
+      ""
+    end
+
     <<~PROMPT
       Generate 3 different positive interesting facts and image prompts for a given date.
 
       Date: #{@date}
-
+      #{previous_facts_section}
       For each option, provide:
       - fact: An interesting and positive fact about this date in the past
       - image_prompt: An image prompt to transform a headshot based on the fact
